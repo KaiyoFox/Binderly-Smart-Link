@@ -11,6 +11,9 @@ echo "ExecStart=/usr/bin/chromium-browser --noerrdialogs --kiosk http://localhos
 apt install unclutter
 echo "ExecStartPre=/usr/bin/unclutter -idle 0" >> /home/%user/.config/systemd/binderly-kiosk.service
 
+systemctl daemon-reload
+systemctl enable binderly-kiosk.service
+
 # ----random notes----
 
 # Uncomment the following line to install Chromium browser if needed
