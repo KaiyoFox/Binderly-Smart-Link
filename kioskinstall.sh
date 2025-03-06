@@ -9,7 +9,7 @@ echo "ExecStart=/usr/bin/chromium-browser --noerrdialogs --kiosk http://localhos
 
 # Hopefully make cursor invisible
 apt install unclutter
-echo "ExecStartPre=/usr/bin/unclutter -idle 0" >> /home/%user/.config/systemd/binderly-kiosk.servic
+echo "ExecStartPre=/usr/bin/unclutter -idle 0" >> /home/%user/.config/systemd/binderly-kiosk.service
 
 # ----random notes----
 
