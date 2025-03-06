@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Announcements - Cinema Mode</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: none; /* Hide the cursor */
+        }
+
+        .screen {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .animated-background {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .pattern {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%),
+                        linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%);
+            background-size: 150px 150px;
+            background-position: 0 0, 75px 75px;
+        }
+
+        .moving-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .shape {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background-color: rgba(255, 255, 255, 0.07);
+            border-radius: 50%;
+        }
+
+        .shape.large {
+            width: 120px;
+            height: 120px;
+        }
+
+        .content-wrapper {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            z-index: 100;
+            padding: 5vh;
+            box-sizing: border-box;
+        }
+
+        .poster-display {
+            width: 100%;
+            height: 85%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .poster-container {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            max-width: 90%;
+            max-height: 90%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+        }
+
+        .poster-container.active {
+            opacity: 1;
+        }
+
+        .poster {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .info-bar {
+            position: absolute;
+            bottom: 3vh;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 2.2vh;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 101;
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.9) 100%);
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body>
+
+<div class="screen">
+    <div class="animated-background">
+        <div class="pattern"></div>
+        <div class="moving-shapes">
+            <div class="shape" style="top: 10%; left: 5%;"></div>
+            <div class="shape large" style="top: 80%; left: 60%;"></div>
+            <div class="shape" style="top: 40%; left: 45%;"></div>
+            <div class="shape large" style="top: 65%; left: 20%;"></div>
+        </div>
+    </div>
+    <div class="vignette"></div>
+    <div class="content-wrapper">
+        <div class="poster-display" id="posterDisplay">
+            {% for announcement in announcements %}
+            <div class="poster-container {% if loop.first %}active{% endif %}">
+                {% if announcement.imgs %}
+                    <img class="poster" src="{{ url_for('get_image', image_path=announcement.imgs[0]['img']) }}" alt="{{ announcement.imgs[0]['img_title'] }}">
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="info-bar" id="infoBar">
+            {% if announcements %}
+                {{ announcements[0].body }}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Load the announcement data from the Flask route
+const announcements = {{ announcements | tojson }};
+
+class TVDisplay {
+    constructor(announcements) {
+        this.announcements = announcements;
+        this.currentIndex = 0;
+        this.display = document.getElementById('posterDisplay');
+        this.infoBar = document.getElementById('infoBar');
+        this.containers = Array.from(this.display.children);
+        this.showCurrent();
+        this.startRotation();
+    }
+
+    showCurrent() {
+        this.containers.forEach(container => container.classList.remove('active'));
+        this.containers[this.currentIndex].classList.add('active');
+        this.infoBar.textContent = this.announcements[this.currentIndex].body;
+    }
+
+    next() {
+        this.currentIndex = (this.currentIndex + 1) % this.announcements.length;
+        this.showCurrent();
+    }
+
+    startRotation() {
+        setInterval(() => this.next(), 12000);
+    }
+}
+
+// Request full screen on page load
+function openFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.mozRequestFullScreen) { // Firefox
+        elem.mozRequestFullScreen();
+    } else if (elem.webkitRequestFullscreen) { // Chrome, Safari and Opera
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { // IE/Edge
+        elem.msRequestFullscreen();
+    }
+}
+
+window.addEventListener('load', () => {
+    openFullscreen();
+    new TVDisplay(announcements);
+});
+</script>
+
+</body>
+</html>

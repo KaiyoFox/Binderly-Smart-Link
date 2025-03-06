@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Announcements - Cinema Mode</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: none; /* Hide cursor */
+        }
+
+        .screen {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .animated-background {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .pattern {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%),
+                        linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%);
+            background-size: 150px 150px;
+            background-position: 0 0, 75px 75px;
+            animation: patternMove 20s linear infinite;
+        }
+
+        .moving-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .shape {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background-color: rgba(255, 255, 255, 0.07);
+            border-radius: 50%;
+            animation: moveShape 35s ease-in-out infinite;
+        }
+
+        .shape.large {
+            width: 120px;
+            height: 120px;
+        }
+
+        @keyframes moveShape {
+            0% {
+                transform: translate(-200px, 200px) rotate(0deg);
+            }
+            100% {
+                transform: translate(150vw, -150vh) rotate(360deg);
+            }
+        }
+
+        @keyframes patternMove {
+            0% {
+                background-position: 0 0, 75px 75px;
+            }
+            100% {
+                background-position: 150px 150px, 225px 225px;
+            }
+        }
+
+        .content-wrapper {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            z-index: 100;
+            padding: 5vh;
+            box-sizing: border-box;
+        }
+
+        .poster-display {
+            width: 100%;
+            height: 85%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .poster-container {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            max-width: 90%;
+            max-height: 90%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.3);
+            transition: all 1.8s ease-in-out;
+            opacity: 0;
+        }
+
+        .poster-container.active {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        .poster {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .info-bar {
+            position: absolute;
+            bottom: 3vh;
+            left: 50%;
+            transform: translateX(-50%) scale(0.9);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 2.2vh;
+            opacity: 0;
+            transition: all 1.5s ease-in-out;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 101;
+        }
+
+        .info-bar.active {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.9) 100%);
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body>
+
+<div class="screen">
+    <div class="animated-background">
+        <div class="pattern"></div>
+        <div class="moving-shapes">
+            <div class="shape" style="top: 10%; left: 5%; animation-duration: 28s;"></div>
+            <div class="shape large" style="top: 80%; left: 60%; animation-duration: 32s;"></div>
+            <div class="shape" style="top: 40%; left: 45%; animation-duration: 35s;"></div>
+            <div class="shape large" style="top: 65%; left: 20%; animation-duration: 40s;"></div>
+        </div>
+    </div>
+    <div class="vignette"></div>
+    <div class="content-wrapper">
+        <div class="poster-display" id="posterDisplay">
+            {% for announcement in announcements %}
+            <div class="poster-container {% if loop.first %}active{% endif %}">
+                {% if announcement.imgs %}
+                    <img class="poster" src="{{ url_for('get_image', image_path=announcement.imgs[0]['img']) }}" alt="{{ announcement.imgs[0]['img_title'] }}">
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="info-bar" id="infoBar">
+            {% if announcements %}
+                {{ announcements[0].body }}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Load the announcement data from the Flask route
+const announcements = {{ announcements | tojson }};
+
+class TVDisplay {
+    constructor(announcements) {
+        this.announcements = announcements;
+        this.currentIndex = 0;
+        this.display = document.getElementById('posterDisplay');
+        this.infoBar = document.getElementById('infoBar');
+        this.containers = Array.from(this.display.children);
+        this.showCurrent();
+        this.startRotation();
+    }
+
+    showCurrent() {
+        this.containers.forEach(container => container.classList.remove('active'));
+        this.containers[this.currentIndex].classList.add('active');
+        this.infoBar.textContent = this.announcements[this.currentIndex].body;
+        this.infoBar.classList.remove('active');
+        setTimeout(() => this.infoBar.classList.add('active'), 500);
+    }
+
+    next() {
+        this.infoBar.classList.remove('active');
+        setTimeout(() => {
+            this.currentIndex = (this.currentIndex + 1) % this.announcements.length;
+            this.showCurrent();
+        }, 1000);
+    }
+
+    startRotation() {
+        setInterval(() => this.next(), 12000);
+    }
+}
+
+// Request full screen on page load
+function openFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.mozRequestFullScreen) { // Firefox
+        elem.mozRequestFullScreen();
+    } else if (elem.webkitRequestFullscreen) { // Chrome, Safari and Opera
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { // IE/Edge
+        elem.msRequestFullscreen();
+    }
+}
+
+// Auto-hide cursor after inactivity
+let timeout;
+document.addEventListener('mousemove', () => {
+    document.body.style.cursor = 'default';
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+        document.body.style.cursor = 'none';
+    }, 3000); // 3 seconds of inactivity hides the cursor
+});
+
+window.addEventListener('load', () => {
+    openFullscreen();
+    new TVDisplay(announcements);
+});
+</script>
+
+</body>
+</html>
