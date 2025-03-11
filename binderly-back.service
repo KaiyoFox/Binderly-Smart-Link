@@ -1,0 +1,13 @@
+[Unit]
+Description=Binderly Smart Link Service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/pi/Binderly-Smart-Link/src/main.py
+WorkingDirectory=/home/pi/Binderly-Smart-Link/src
+Restart=always
+User=pi
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
