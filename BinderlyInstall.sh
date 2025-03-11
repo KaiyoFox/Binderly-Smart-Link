@@ -1,6 +1,10 @@
 #!/bin/bash
 echo "Installing..."
 
+#Navigate to "pi" user home, and ensure pi user
+sudo -u pi -i
+cd ~
+
 #Acquire Root
 sudo su
 
@@ -10,19 +14,25 @@ apt-get install python3-pip
 apt-get install git
 
 #Fetch Repo
-git clone https://github.com/KaiyoFox/binderlySmartLink.git
-cd binderlySmartLink
+git clone https://github.com/KaiyoFox/Binderly-Smart-Link.git
+cd Binderly-Smart-Link
 
 #Install Python Packages
 pip install -r requirements.txt --break-system-packages
 
 #Assemble Services
-mv binderly-kiosk.service /etc/systemd/system/binderly-kiosk.service
-mv binderly-back.service /etc/systemd/system/binderly-back.service
+mv binderly-kiosk.service /home/pi/.config/systemd/user/
+mv binderly-back.service /etc/systemd/system/
 
 #Refresh & Enable Services
 systemctl daemon-reload
 systemctl enable binderly-back.service
+
+#navigate back to pi
+exit
+
+#Refresh USER Services & Enable em
+systemctl --user daemon-reload
 systemctl enable binderly-kiosk.service
 
 echo "Installation finished; Reboot to Finish"

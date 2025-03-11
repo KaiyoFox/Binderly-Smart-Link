@@ -1,0 +1,13 @@
+[Unit]
+Description=Binderly Smart Link Service - Kiosk
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/chromium-browser --noerrdialogs --disable-infobars --kiosk http://localhost:5014/
+Restart=always
+Type=simple
+Environment=DISPLAY=:0
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+
+[Install]
+WantedBy=default.target
