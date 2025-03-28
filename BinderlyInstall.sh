@@ -13,10 +13,6 @@ apt-get install python3
 apt-get install python3-pip
 apt-get install git
 
-#Fetch Repo
-git clone https://github.com/KaiyoFox/Binderly-Smart-Link.git
-cd Binderly-Smart-Link
-
 #Install Python Packages
 pip install -r requirements.txt --break-system-packages
 
